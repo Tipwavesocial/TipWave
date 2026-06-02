@@ -1,0 +1,19 @@
+{
+  "name": "tipwave",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "setup": "pnpm --filter @tipwave/contracts compile && pnpm --filter @tipwave/contracts deploy:local",
+    "deploy:sepolia": "pnpm --filter @tipwave/contracts deploy:sepolia"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0"
+  },
+  "packageManager": "pnpm@9.0.0"
+}
