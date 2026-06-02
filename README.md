@@ -8,7 +8,7 @@
 [![Built on Base](https://img.shields.io/badge/Built%20on-Base-0052FF?style=flat-square)](https://base.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square)](https://typescriptlang.org)
 
-X [@TipWavegg](https://twitter.com) · [tipwave.xyz](https://tipwave.xyz)
+X [@TipWavesocial](https://twitter.com) · [tipwave.xyz](https://tipwave.xyz)
 
 ---
 
