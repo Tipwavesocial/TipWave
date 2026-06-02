@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TipWave 🌊 — Decentralized Tipping on Base</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #050a0e;
+    --surface: #0d1a22;
+    --card: #0f2030;
+    --accent: #00ff88;
+    --accent2: #00c8ff;
+    --accent3: #ff6b35;
+    --text: #e8f4f0;
+    --muted: #5a7a8a;
+    --border: rgba(0,255,136,0.15);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  .cursor {
+    position: fixed;
+    width: 12px; height: 12px;
+    background: var(--accent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s ease, width 0.2s, height 0.2s, background 0.2s;
+    mix-blend-mode: screen;
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 36px; height: 36px;
+    border: 1.5px solid rgba(0,255,136,0.5);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: transform 0.12s ease, width 0.3s, height 0.3s;
+  }
+  body:hover .cursor { opacity: 1; }
+
+  /* Animated grid background */
+  .grid-bg {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+    animation: gridShift 20s linear infinite;
+  }
+  @keyframes gridShift {
+    from { background-position: 0 0; }
+    to { background-position: 60px 60px; }
+  }
+
+  /* Glowing orbs */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .orb1 { width: 600px; height: 600px; background: rgba(0,255,136,0.06); top: -200px; left: -100px; animation: drift1 12s ease-in-out infinite alternate; }
+  .orb2 { width: 500px; height: 500px; background: rgba(0,200,255,0.05); bottom: -100px; right: -100px; animation: drift2 15s ease-in-out infinite alternate; }
+  .orb3 { width: 300px; height: 300px; background: rgba(255,107,53,0.04); top: 50%; left: 50%; animation: drift3 10s ease-in-out infinite alternate; }
+  @keyframes drift1 { to { transform: translate(60px, 80px); } }
+  @keyframes drift2 { to { transform: translate(-60px, -80px); } }
+  @keyframes drift3 { to { transform: translate(-40px, 60px); } }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 60px;
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    background: rgba(5,10,14,0.7);
+  }
+  .nav-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -0.5px;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .nav-logo span { color: var(--text); }
+  .nav-links { display: flex; gap: 40px; list-style: none; }
+  .nav-links a { color: var(--muted); text-decoration: none; font-size: 13px; letter-spacing: 0.05em; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--accent); }
+  .nav-cta {
+    padding: 10px 22px;
+    background: var(--accent);
+    color: #050a0e;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    border: none;
+    cursor: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  }
+  .nav-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,255,136,0.3); }
+
+  /* HERO */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 120px 40px 80px;
+    z-index: 1;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border: 1px solid var(--border);
+    background: rgba(0,255,136,0.05);
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    margin-bottom: 40px;
+    animation: fadeUp 0.6s ease both;
+  }
+  .badge-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.3); } }
+
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(56px, 10vw, 110px);
+    line-height: 0.9;
+    letter-spacing: -3px;
+    margin-bottom: 30px;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+  .hero h1 .wave { color: var(--accent); display: inline-block; animation: wave 3s ease-in-out infinite; }
+  @keyframes wave {
+    0%,100% { transform: skewX(0deg); }
+    25% { transform: skewX(-3deg); }
+    75% { transform: skewX(3deg); }
+  }
+  .hero h1 .italic { font-family: 'Instrument Serif', serif; font-style: italic; color: var(--accent2); }
+
+  .hero-sub {
+    font-size: 16px;
+    color: var(--muted);
+    max-width: 480px;
+    line-height: 1.7;
+    margin-bottom: 50px;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+  .hero-sub strong { color: var(--text); }
+
+  .hero-actions {
+    display: flex; gap: 16px; align-items: center;
+    animation: fadeUp 0.6s 0.3s ease both;
+  }
+  .btn-primary {
+    padding: 16px 36px;
+    background: var(--accent);
+    color: #050a0e;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    border: none;
+    cursor: none;
+    transition: all 0.3s;
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-primary::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s;
+  }
+  .btn-primary:hover::after { transform: translateX(100%); }
+  .btn-primary:hover { box-shadow: 0 0 40px rgba(0,255,136,0.4); transform: translateY(-3px); }
+
+  .btn-ghost {
+    padding: 14px 36px;
+    background: transparent;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    border: 1px solid var(--border);
+    cursor: none;
+    transition: all 0.3s;
+    text-decoration: none;
+  }
+  .btn-ghost:hover { border-color: var(--accent2); color: var(--accent2); box-shadow: 0 0 20px rgba(0,200,255,0.15); }
+
+  .hero-stats {
+    display: flex; gap: 60px;
+    margin-top: 80px;
+    padding-top: 60px;
+    border-top: 1px solid var(--border);
+    animation: fadeUp 0.6s 0.4s ease both;
+  }
+  .stat { text-align: center; }
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 36px;
+    color: var(--accent);
+    display: block;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .stat-label { font-size: 11px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* WAVE SEPARATOR */
+  .wave-sep {
+    position: relative;
+    height: 120px;
+    overflow: hidden;
+  }
+  .wave-sep svg { position: absolute; bottom: 0; width: 100%; }
+
+  /* SECTION */
+  section { position: relative; z-index: 1; }
+
+  .section-inner { max-width: 1160px; margin: 0 auto; padding: 100px 40px; }
+
+  .section-tag {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 20px;
+    padding: 4px 12px;
+    border: 1px solid var(--border);
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(36px, 5vw, 60px);
+    letter-spacing: -2px;
+    line-height: 1;
+    margin-bottom: 20px;
+  }
+
+  /* COMPARE TABLE */
+  .compare-section { background: var(--surface); }
+  .compare-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 60px; }
+  .compare-subtitle { color: var(--muted); font-size: 14px; line-height: 1.7; max-width: 360px; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    padding: 16px 24px;
+    text-align: left;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  thead th.highlight { color: var(--accent); }
+  tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.2s; }
+  tbody tr:hover { background: rgba(0,255,136,0.03); }
+  tbody td { padding: 20px 24px; font-size: 14px; }
+  tbody td:first-child { color: var(--muted); }
+  tbody td.good { color: var(--accent); font-weight: 500; }
+  tbody td.bad { color: #ff4444; }
+  tbody td.neutral { color: var(--muted); }
+
+  /* HOW IT WORKS */
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin-top: 60px; }
+  .step {
+    padding: 40px 30px;
+    background: var(--card);
+    position: relative;
+    transition: all 0.3s;
+    border: 1px solid transparent;
+  }
+  .step:hover { border-color: var(--border); transform: translateY(-4px); }
+  .step-num {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 72px;
+    color: rgba(0,255,136,0.08);
+    line-height: 1;
+    margin-bottom: 20px;
+    letter-spacing: -4px;
+  }
+  .step-icon { font-size: 28px; margin-bottom: 16px; }
+  .step h3 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+  }
+  .step p { color: var(--muted); font-size: 13px; line-height: 1.7; }
+  .step-connector {
+    position: absolute; right: -2px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--accent);
+    font-size: 18px;
+    z-index: 2;
+  }
+
+  /* FEATURES */
+  .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; margin-top: 60px; }
+  .feature {
+    padding: 40px;
+    background: var(--card);
+    border: 1px solid transparent;
+    transition: all 0.4s;
+    position: relative;
+    overflow: hidden;
+  }
+  .feature::before {
+    content: '';
+    position: absolute; top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: linear-gradient(180deg, var(--accent), transparent);
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 0.4s;
+  }
+  .feature:hover::before { transform: scaleY(1); }
+  .feature:hover { border-color: var(--border); }
+  .feature-icon { font-size: 32px; margin-bottom: 20px; }
+  .feature h3 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+  }
+  .feature p { color: var(--muted); font-size: 13px; line-height: 1.7; }
+  .feature-tag {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 4px 10px;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    border: 1px solid;
+  }
+  .feature-tag.green { color: var(--accent); border-color: rgba(0,255,136,0.3); }
+  .feature-tag.blue { color: var(--accent2); border-color: rgba(0,200,255,0.3); }
+  .feature-tag.orange { color: var(--accent3); border-color: rgba(255,107,53,0.3); }
+
+  /* TECH STACK */
+  .tech-section { background: var(--surface); }
+  .tech-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; margin-top: 60px; }
+  .tech-card {
+    padding: 30px 20px;
+    background: var(--card);
+    text-align: center;
+    transition: all 0.3s;
+    border: 1px solid transparent;
+  }
+  .tech-card:hover { border-color: var(--border); transform: translateY(-4px); }
+  .tech-icon { font-size: 28px; margin-bottom: 10px; display: block; }
+  .tech-layer { font-size: 10px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 4px; }
+  .tech-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; }
+
+  /* ROADMAP */
+  .roadmap-list { margin-top: 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+  .road-item {
+    display: flex; align-items: center; gap: 20px;
+    padding: 24px 30px;
+    background: var(--card);
+    border: 1px solid transparent;
+    transition: all 0.3s;
+  }
+  .road-item:hover { border-color: var(--border); }
+  .road-item.done { border-left: 3px solid var(--accent); }
+  .road-item.todo { border-left: 3px solid rgba(255,255,255,0.1); }
+  .road-check { font-size: 18px; flex-shrink: 0; }
+  .road-label { font-size: 14px; color: var(--muted); }
+  .road-item.done .road-label { color: var(--text); }
+
+  /* CTA */
+  .cta-section {
+    text-align: center;
+    padding: 140px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-section::before {
+    content: 'TIPWAVE';
+    position: absolute;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 300px;
+    color: rgba(0,255,136,0.02);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    letter-spacing: -20px;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .cta-section h2 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(42px, 7vw, 80px);
+    letter-spacing: -3px;
+    line-height: 1;
+    margin-bottom: 24px;
+  }
+  .cta-section p { color: var(--muted); font-size: 16px; margin-bottom: 50px; }
+  .cta-links { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 40px 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    z-index: 1;
+  }
+  .footer-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; color: var(--accent); }
+  .footer-links { display: flex; gap: 30px; }
+  .footer-links a { color: var(--muted); text-decoration: none; font-size: 12px; transition: color 0.2s; }
+  .footer-links a:hover { color: var(--accent); }
+  .footer-copy { font-size: 12px; color: var(--muted); }
+
+  /* TICKER */
+  .ticker-wrap {
+    overflow: hidden;
+    background: var(--accent);
+    padding: 10px 0;
+    border-top: none;
+    border-bottom: 1px solid rgba(0,255,136,0.3);
+  }
+  .ticker-track {
+    display: flex;
+    animation: ticker 25s linear infinite;
+    white-space: nowrap;
+  }
+  .ticker-item {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: #050a0e;
+    padding: 0 40px;
+    letter-spacing: 0.08em;
+    flex-shrink: 0;
+  }
+  .ticker-sep { color: rgba(5,10,14,0.4); padding: 0 10px; }
+  @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  /* Live tip simulation */
+  .live-tips {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+  }
+  .tip-toast {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 260px;
+    animation: slideIn 0.4s ease, fadeOut 0.4s 3.6s ease both;
+    backdrop-filter: blur(10px);
+  }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes fadeOut { to { opacity: 0; transform: translateX(40px); } }
+  .tip-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .tip-info { font-size: 12px; }
+  .tip-info strong { color: var(--accent); }
+  .tip-info span { color: var(--muted); display: block; }
+
+  /* TOKEN / CA SECTION */
+  .token-section { background: var(--bg); }
+  .token-card {
+    margin-top: 60px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    padding: 50px;
+    position: relative;
+    overflow: hidden;
+  }
+  .token-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent));
+    background-size: 200% 100%;
+    animation: shimmer 3s linear infinite;
+  }
+  @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+  .token-top {
+    display: flex; align-items: center; gap: 20px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+  }
+  .token-symbol {
+    width: 64px; height: 64px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    flex-shrink: 0;
+  }
+  .token-name-wrap h3 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+    letter-spacing: -1px;
+    margin-bottom: 4px;
+  }
+  .token-name-wrap p { color: var(--muted); font-size: 13px; }
+  .token-live-badge {
+    margin-left: auto;
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 18px;
+    border: 1px solid rgba(0,255,136,0.3);
+    background: rgba(0,255,136,0.05);
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+  }
+
+  .ca-label {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .ca-box {
+    display: flex; align-items: center; gap: 0;
+    border: 1px solid var(--border);
+    background: rgba(0,0,0,0.3);
+    margin-bottom: 40px;
+    overflow: hidden;
+  }
+  .ca-address {
+    flex: 1;
+    padding: 16px 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    word-break: break-all;
+    line-height: 1.5;
+  }
+  .ca-address.placeholder { color: var(--muted); font-style: italic; font-size: 13px; }
+  .ca-copy-btn {
+    padding: 16px 24px;
+    background: rgba(0,255,136,0.1);
+    border: none;
+    border-left: 1px solid var(--border);
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    cursor: none;
+    transition: all 0.2s;
+    white-space: nowrap;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+  .ca-copy-btn:hover { background: rgba(0,255,136,0.2); }
+  .ca-copy-btn.copied { background: rgba(0,255,136,0.3); color: #050a0e; }
+
+  .token-info-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+  }
+  .token-info-item {
+    padding: 20px;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+  .token-info-key {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .token-info-val {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text);
+  }
+  .token-info-val.tbd { color: var(--muted); font-style: italic; font-size: 13px; font-family: 'DM Mono', monospace; font-weight: 400; }
+
+  .token-warning {
+    margin-top: 24px;
+    padding: 14px 20px;
+    border: 1px solid rgba(255,107,53,0.3);
+    background: rgba(255,107,53,0.05);
+    font-size: 12px;
+    color: rgba(255,107,53,0.8);
+    display: flex; align-items: center; gap: 10px;
+    line-height: 1.6;
+  }
+
+  .dex-links { display: flex; gap: 10px; margin-top: 30px; flex-wrap: wrap; }
+  .dex-btn {
+    padding: 10px 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    cursor: none;
+    transition: all 0.2s;
+    text-decoration: none;
+    letter-spacing: 0.05em;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .dex-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+  .dex-btn.disabled { opacity: 0.3; pointer-events: none; }
+
+  @media (max-width: 900px) {
+    /* NAV */
+    nav { padding: 12px 16px; }
+    .nav-links { display: none; }
+    .nav-logo { font-size: 17px; gap: 7px !important; }
+    .nav-logo img { width: 26px !important; height: 26px !important; }
+    .nav-cta { padding: 9px 14px; font-size: 12px; }
+
+    /* HERO */
+    .hero { padding: 100px 20px 60px; }
+    .hero-stats { gap: 20px; flex-wrap: wrap; justify-content: center; }
+    .stat-num { font-size: 26px; }
+
+    /* SECTIONS */
+    .section-inner { padding: 60px 20px; }
+    .steps { grid-template-columns: 1fr 1fr; }
+    .features-grid { grid-template-columns: 1fr; }
+    .tech-grid { grid-template-columns: repeat(3, 1fr); }
+    .roadmap-list { grid-template-columns: 1fr; }
+    .compare-header { flex-direction: column; gap: 20px; }
+
+    /* TOKEN */
+    .token-card { padding: 24px 16px; }
+    .token-live-badge { display: none; }
+    .token-info-grid { grid-template-columns: 1fr 1fr; }
+    .token-top { gap: 12px; }
+    .token-symbol img { width: 52px !important; height: 52px !important; }
+    .token-name-wrap h3 { font-size: 22px; }
+    .ca-address { font-size: 12px; padding: 12px 14px; }
+    .ca-copy-btn { padding: 12px 14px; font-size: 11px; }
+    .dex-links { flex-wrap: wrap; gap: 8px; }
+    .dex-btn { font-size: 11px; padding: 8px 14px; }
+    .token-warning { font-size: 11px; }
+
+    /* FOOTER */
+    footer { flex-direction: column; gap: 20px; text-align: center; padding: 30px 20px; }
+    .footer-links { flex-wrap: wrap; justify-content: center; gap: 16px; }
+
+    /* LIVE TOASTS */
+    .live-tips { bottom: 16px; right: 16px; }
+    .tip-toast { max-width: 220px; padding: 10px 14px; }
+  }
+
+  @media (max-width: 480px) {
+    .steps { grid-template-columns: 1fr; }
+    .tech-grid { grid-template-columns: repeat(2, 1fr); }
+    .token-info-grid { grid-template-columns: 1fr 1fr; }
+    .hero h1 { letter-spacing: -2px; }
+    .section-title { letter-spacing: -1px; }
+    .cta-section h2 { letter-spacing: -2px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="grid-bg"></div>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
+<!-- Live tips toast -->
+<div class="live-tips" id="liveTips"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo" style="display:flex;align-items:center;gap:10px;">
+    <img src="tipwave-logo.png" alt="TipWave" style="width:32px;height:32px;object-fit:contain;">
+    TIP<span>WAVE</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#token">Token</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#tech">Stack</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+  </ul>
+  <a href="https://tipwave.xyz" target="_blank" class="nav-cta">Launch App →</a>
+</nav>
+
+<!-- TICKER -->
+<div class="ticker-wrap" style="margin-top: 72px;">
+  <div class="ticker-track">
+    <span class="ticker-item">⚡ ZERO PLATFORM FEE</span>
+    <span class="ticker-item">🔗 BUILT ON BASE</span>
+    <span class="ticker-item">💸 ANY ERC-20 TOKEN</span>
+    <span class="ticker-item">⛽ GASLESS OPTION</span>
+    <span class="ticker-item">🔒 FULLY ON-CHAIN</span>
+    <span class="ticker-item">🌊 TIP IN ~2 SECONDS</span>
+    <span class="ticker-item">⚡ ZERO PLATFORM FEE</span>
+    <span class="ticker-item">🔗 BUILT ON BASE</span>
+    <span class="ticker-item">💸 ANY ERC-20 TOKEN</span>
+    <span class="ticker-item">⛽ GASLESS OPTION</span>
+    <span class="ticker-item">🔒 FULLY ON-CHAIN</span>
+    <span class="ticker-item">🌊 TIP IN ~2 SECONDS</span>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">
+    <span class="badge-dot"></span>
+    LIVE ON BASE MAINNET
+  </div>
+  <h1>
+    Support<br>
+    <span class="wave">creators</span><br>
+    <span class="italic">directly.</span>
+  </h1>
+  <p class="hero-sub">
+    TipWave is a <strong>decentralized tipping platform</strong> on Base.
+    No middlemen. No cuts. No waiting. Your tip arrives in seconds — straight to the creator's wallet.
+  </p>
+  <div class="hero-actions">
+    <a href="https://tipwave.xyz" target="_blank" class="btn-primary">Start Tipping →</a>
+    <a href="https://github.com/Tipwavesocial/TipWave" target="_blank" class="btn-ghost">View on GitHub</a>
+  </div>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">0%</span>
+      <span class="stat-label">Platform Fee</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">~2s</span>
+      <span class="stat-label">Settlement</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">$0.001</span>
+      <span class="stat-label">Min Tip</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">∞</span>
+      <span class="stat-label">Tokens Supported</span>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARE -->
+<section class="compare-section">
+  <div class="section-inner">
+    <div class="compare-header">
+      <div>
+        <div class="section-tag">Why TipWave</div>
+        <h2 class="section-title">Not your grandma's<br>tip jar.</h2>
+      </div>
+      <p class="compare-subtitle">Traditional platforms take 5–30% cuts and hold your money for days. TipWave routes 100% directly to you, instantly.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th class="highlight">TipWave (Base)</th>
+            <th>Traditional Platforms</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Platform fee</td>
+            <td class="good">0%</td>
+            <td class="bad">5–30%</td>
+          </tr>
+          <tr>
+            <td>Settlement time</td>
+            <td class="good">~2 seconds</td>
+            <td class="bad">3–7 business days</td>
+          </tr>
+          <tr>
+            <td>Censorship risk</td>
+            <td class="good">None</td>
+            <td class="bad">High</td>
+          </tr>
+          <tr>
+            <td>Transparency</td>
+            <td class="good">Full (on-chain)</td>
+            <td class="bad">None</td>
+          </tr>
+          <tr>
+            <td>Min tip amount</td>
+            <td class="good">~$0.001</td>
+            <td class="bad">$1–5 minimum</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="section-inner">
+    <div class="section-tag">How It Works</div>
+    <h2 class="section-title">Four steps.<br>Infinite vibes.</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-icon">🔗</div>
+        <h3>Connect Wallet</h3>
+        <p>Creator connects their wallet and gets a shareable tip link at <code style="color:var(--accent); font-size:11px">tipwave.xyz/0x...</code></p>
+        <div class="step-connector">→</div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-icon">🌐</div>
+        <h3>Share Link</h3>
+        <p>Drop it in your bio, stream overlay, or newsletter. Anyone can tip from any browser — no signup needed.</p>
+        <div class="step-connector">→</div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-icon">💸</div>
+        <h3>Fan Tips</h3>
+        <p>Supporter picks an amount and token, then signs a transaction. The smart contract routes it directly to the creator.</p>
+        <div class="step-connector">→</div>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div class="step-icon">✅</div>
+        <h3>On-Chain Receipt</h3>
+        <p>Both parties receive a permanent, verifiable on-chain record. Censorship-resistant. Forever.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features" style="background: var(--surface);">
+  <div class="section-inner">
+    <div class="section-tag">Features</div>
+    <h2 class="section-title">Built different.</h2>
+    <div class="features-grid">
+      <div class="feature">
+        <div class="feature-icon">⚡</div>
+        <h3>Zero Platform Cut</h3>
+        <p>100% of every tip goes directly to the creator. TipWave takes nothing. Not 1%. Not 0.1%. Nothing.</p>
+        <span class="feature-tag green">Core Feature</span>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🪙</div>
+        <h3>Any Token</h3>
+        <p>ETH, USDC, or any ERC-20 token. Tip in whatever you hold — or accept anything you want.</p>
+        <span class="feature-tag blue">Multi-Token</span>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">⛽</div>
+        <h3>Gasless Option</h3>
+        <p>Sponsored transactions via ERC-4337 Paymaster mean fans can tip with zero gas fees from their end.</p>
+        <span class="feature-tag orange">Coming Soon</span>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔒</div>
+        <h3>On-Chain History</h3>
+        <p>Every tip is permanent and verifiable on Base. No backend. No database. Just the blockchain.</p>
+        <span class="feature-tag green">Trustless</span>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">👤</div>
+        <h3>Creator Profiles</h3>
+        <p>Link your wallet to a public profile. Make it yours. Share the link. Get tipped in seconds.</p>
+        <span class="feature-tag blue">Identity</span>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🛡️</div>
+        <h3>Censorship Resistant</h3>
+        <p>No platform can suspend your account or freeze your tips. Smart contracts don't have opinions.</p>
+        <span class="feature-tag green">Unstoppable</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TECH STACK -->
+<section id="tech">
+  <div class="section-inner">
+    <div class="section-tag">Tech Stack</div>
+    <h2 class="section-title">Serious tech.<br>Serious stack.</h2>
+    <div class="tech-grid">
+      <div class="tech-card">
+        <span class="tech-icon">🔵</span>
+        <div class="tech-layer">Chain</div>
+        <div class="tech-name">Base (OP Stack)</div>
+      </div>
+      <div class="tech-card">
+        <span class="tech-icon">⬡</span>
+        <div class="tech-layer">Contracts</div>
+        <div class="tech-name">Solidity + Hardhat</div>
+      </div>
+      <div class="tech-card">
+        <span class="tech-icon">📦</span>
+        <div class="tech-layer">SDK</div>
+        <div class="tech-name">TypeScript + viem</div>
+      </div>
+      <div class="tech-card">
+        <span class="tech-icon">▲</span>
+        <div class="tech-layer">Frontend</div>
+        <div class="tech-name">Next.js 14</div>
+      </div>
+      <div class="tech-card">
+        <span class="tech-icon">🌈</span>
+        <div class="tech-layer">Wallet</div>
+        <div class="tech-name">RainbowKit + wagmi</div>
+      </div>
+      <div class="tech-card">
+        <span class="tech-icon">⚗️</span>
+        <div class="tech-layer">Gasless</div>
+        <div class="tech-name">Base Paymaster</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section id="roadmap" style="background: var(--surface);">
+  <div class="section-inner">
+    <div class="section-tag">Roadmap</div>
+    <h2 class="section-title">Where we're<br>headed.</h2>
+    <div class="roadmap-list">
+      <div class="road-item done">
+        <span class="road-check">✅</span>
+        <div class="road-label">Core tip contract (ETH + ERC-20)</div>
+      </div>
+      <div class="road-item done">
+        <span class="road-check">✅</span>
+        <div class="road-label">Creator profile registry</div>
+      </div>
+      <div class="road-item todo">
+        <span class="road-check">🔲</span>
+        <div class="road-label">Gasless tips via Paymaster (ERC-4337)</div>
+      </div>
+      <div class="road-item todo">
+        <span class="road-check">🔲</span>
+        <div class="road-label">Subscription / recurring tips</div>
+      </div>
+      <div class="road-item todo">
+        <span class="road-check">🔲</span>
+        <div class="road-label">NFT reward for top supporters</div>
+      </div>
+      <div class="road-item todo">
+        <span class="road-check">🔲</span>
+        <div class="road-label">Leaderboard & social discovery</div>
+      </div>
+      <div class="road-item todo">
+        <span class="road-check">🔲</span>
+        <div class="road-label">Mobile app (React Native)</div>
+      </div>
+      <div class="road-item todo">
+        <span class="road-check">🔲</span>
+        <div class="road-label">Third-party smart contract audit</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TOKEN / CA SECTION -->
+<section id="token" class="token-section">
+  <div class="section-inner">
+    <div class="section-tag">Token</div>
+    <h2 class="section-title">$WAVE Token.</h2>
+
+    <div class="token-card">
+      <div class="token-top">
+        <div class="token-symbol" style="background:none; clip-path:none; width:72px; height:72px;">
+          <img src="tipwave-logo.png" alt="TipWave Logo" style="width:72px; height:72px; object-fit:contain; border-radius:50%;">
+        </div>
+        <div class="token-name-wrap">
+          <h3>$WAVE</h3>
+          <p>Official token of the TipWave ecosystem on Base</p>
+        </div>
+        <div class="token-live-badge">
+          <span class="badge-dot"></span>
+          COMING SOON
+        </div>
+      </div>
+
+      <!-- CONTRACT ADDRESS -->
+      <div class="ca-label">Contract Address (CA)</div>
+      <div class="ca-box">
+        <!-- ✏️ REPLACE THE TEXT BELOW WITH YOUR TOKEN CA -->
+        <div class="ca-address placeholder" id="caAddress">
+          — Not yet available. Contract address will be announced soon. —
+        </div>
+        <!-- ============================================== -->
+        <button class="ca-copy-btn" id="copyBtn" onclick="copyCA()">⧉ COPY</button>
+      </div>
+
+      <!-- TOKEN INFO GRID -->
+      <div class="token-info-grid">
+        <div class="token-info-item">
+          <div class="token-info-key">Network</div>
+          <div class="token-info-val">Base (L2)</div>
+        </div>
+        <div class="token-info-item">
+          <div class="token-info-key">Token Standard</div>
+          <div class="token-info-val">ERC-20</div>
+        </div>
+        <div class="token-info-item">
+          <div class="token-info-key">Total Supply</div>
+          <!-- ✏️ FILL IN SUPPLY -->
+          <div class="token-info-val tbd">TBA</div>
+        </div>
+        <div class="token-info-item">
+          <div class="token-info-key">Tax</div>
+          <!-- ✏️ FILL IN TAX -->
+          <div class="token-info-val tbd">TBA</div>
+        </div>
+      </div>
+
+      <!-- DEX LINKS -->
+      <div class="dex-links">
+        <!-- ✏️ FILL IN href WITH YOUR DEX LINKS AFTER LAUNCH -->
+        <a href="#" class="dex-btn disabled">🔄 Uniswap</a>
+        <a href="#" class="dex-btn disabled">📊 Dexscreener</a>
+        <a href="#" class="dex-btn disabled">🦎 GeckoTerminal</a>
+        <a href="#" class="dex-btn disabled">🔍 Basescan</a>
+      </div>
+
+      <div class="token-warning">
+        ⚠️ Always verify the contract address from official sources before buying. Beware of fake tokens impersonating TipWave.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section>
+  <div class="cta-section" style="position:relative;z-index:1;">
+    <div class="section-tag" style="margin: 0 auto 20px; display:block; width:fit-content;">Ready?</div>
+    <h2>Send your first<br><span style="color:var(--accent)">wave</span> today.</h2>
+    <p>No signup. No KYC. No platform. Just your wallet.</p>
+    <div class="cta-links">
+      <a href="https://tipwave.xyz" target="_blank" class="btn-primary">Open TipWave →</a>
+      <a href="https://github.com/Tipwavesocial/TipWave" target="_blank" class="btn-ghost">⭐ Star on GitHub</a>
+      <a href="https://twitter.com/TipWavesocial" target="_blank" class="btn-ghost">𝕏 Follow Us</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo" style="display:flex;align-items:center;gap:10px;">
+    <img src="tipwave-logo.png" alt="TipWave" style="width:28px;height:28px;object-fit:contain;">
+    TIPWAVE
+  </div>
+  <div class="footer-links">
+    <a href="https://github.com/Tipwavesocial/TipWave" target="_blank">GitHub</a>
+    <a href="https://github.com/Tipwavesocial/TipWave/blob/main/CONTRIBUTING.md" target="_blank">Contributing</a>
+    <a href="https://github.com/Tipwavesocial/TipWave/blob/main/SECURITY.md" target="_blank">Security</a>
+    <a href="https://twitter.com/TipWavesocial" target="_blank">Twitter / X</a>
+  </div>
+  <div class="footer-copy">MIT © TipWave Contributors</div>
+</footer>
+
+<script>
+  // Copy CA
+  // ✏️ REPLACE THE STRING BELOW WITH YOUR TOKEN CA
+  const CA_ADDRESS = ''; // example: '0xAbCd...1234'
+
+  function copyCA() {
+    if (!CA_ADDRESS) { alert('Contract address not available yet.'); return; }
+    navigator.clipboard.writeText(CA_ADDRESS).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✓ COPIED!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = '⧉ COPY'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  // Custom cursor
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursorRing');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; cursor.style.left = mx + 'px'; cursor.style.top = my + 'px'; });
+  function animateRing() { rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12; ring.style.left = rx + 'px'; ring.style.top = ry + 'px'; requestAnimationFrame(animateRing); }
+  animateRing();
+  document.querySelectorAll('a, button').forEach(el => {
+    el.addEventListener('mouseenter', () => { cursor.style.width = '20px'; cursor.style.height = '20px'; ring.style.width = '50px'; ring.style.height = '50px'; });
+    el.addEventListener('mouseleave', () => { cursor.style.width = '12px'; cursor.style.height = '12px'; ring.style.width = '36px'; ring.style.height = '36px'; });
+  });
+
+  // Scroll reveal
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.style.opacity = '1'; e.target.style.transform = 'translateY(0)'; } });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.step, .feature, .tech-card, .road-item').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease, border-color 0.3s';
+    observer.observe(el);
+  });
+
+  // Live tip toasts
+  const tips = [
+    { avatar: '🎨', user: '0x4a3f...', amount: '0.05 ETH', to: 'artcreator.eth' },
+    { avatar: '🎵', user: '0xb7c1...', amount: '10 USDC', to: 'musicmaker' },
+    { avatar: '🎮', user: '0x91f0...', amount: '0.01 ETH', to: 'streamking' },
+    { avatar: '📹', user: '0xd23a...', amount: '25 USDC', to: 'filmmaker' },
+    { avatar: '✍️', user: '0xe4b2...', amount: '0.002 ETH', to: 'writerDAO' },
+  ];
+  let tipIdx = 0;
+  function showTip() {
+    const t = tips[tipIdx++ % tips.length];
+    const el = document.createElement('div');
+    el.className = 'tip-toast';
+    el.innerHTML = `<div class="tip-avatar">${t.avatar}</div><div class="tip-info"><strong>${t.amount}</strong> tipped<span>${t.user} → ${t.to}</span></div>`;
+    document.getElementById('liveTips').appendChild(el);
+    setTimeout(() => el.remove(), 4200);
+  }
+  setTimeout(() => { showTip(); setInterval(showTip, 5000); }, 2000);
+</script>
+</body>
+</html>
